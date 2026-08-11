@@ -357,6 +357,36 @@ describe("runBenchmark", () => {
     expect(result.metrics.skippedQuestions).toBe(0);
     expect(result.metrics.accuracy).toBeCloseTo(0.5, 5);
   });
+  it("fails the run when a model error is explicitly systemic", async () => {
+    const service: ModelService = {
+      generate: () =>
+        effectFail(
+          new ModelError({
+            message: "Injected transport is unavailable",
+            status: 400,
+            systemic: true,
+          })
+        ),
+    };
+    const model = { service, layer: layerSucceed(Model, Model.of(service)) };
+    const layers = mergeAll(
+      fakeDatasetLayer(SAMPLES.slice(0, 1)),
+      layerSucceed(
+        Solver,
+        Solver.of(generate(model.service, { temperature: 0 }))
+      ),
+      layerSucceed(Scorer, Scorer.of(mcqScorer)),
+      model.layer,
+      noopProgressLayer,
+      noopCheckpointLayer
+    );
+
+    await expect(
+      runPromise(
+        runBenchmark({ epochs: 1, maxConcurrency: 1 }).pipe(provide(layers))
+      )
+    ).rejects.toThrow("Injected transport is unavailable");
+  });
   it("accumulates generationTimeMs even when the response has no usage object", async () => {
     const model: {
       service: ModelService;

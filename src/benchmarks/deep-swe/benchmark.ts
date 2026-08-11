@@ -47,7 +47,7 @@ function makeDeepSweLayer(
     input.responsesModelLayer ??
     makeResponsesModelLayer({
       model: benchmarkConfig.model,
-      apiKey: input.apiKey,
+      apiKey: input.apiKey ?? "",
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
       ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
@@ -63,7 +63,7 @@ function makeDeepSweLayer(
       return Solver.of(
         makeDeepSweSolver(model, sessionFactory, {
           model: benchmarkConfig.model,
-          apiKey: input.apiKey,
+          apiKey: input.apiKey ?? "",
           stepLimit: benchmarkConfig.stepLimit,
           ...(benchmarkConfig.endpointId !== undefined && {
             endpointId: benchmarkConfig.endpointId,

@@ -54,21 +54,24 @@ export function defineChatBenchmark<
       );
     }
     const datasetLayer =
-      definition.makeDatasetLayerForConfig !== undefined
+      input.datasetLayer ??
+      (definition.makeDatasetLayerForConfig !== undefined
         ? definition.makeDatasetLayerForConfig(
             benchmarkConfig,
             input.datasetRetry
           )
-        : definition.makeDatasetLayer(input.datasetRetry);
+        : definition.makeDatasetLayer(input.datasetRetry));
     const modelLayer =
       input.modelLayer ??
-      makeOpenRouterModelLayer({
-        model: benchmarkConfig.model,
-        apiKey: input.apiKey,
-        ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
-        sessionId: input.sessionId,
-        ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
-      });
+      (input.apiKey === undefined
+        ? layerFail(new Error("An API key or model layer is required"))
+        : makeOpenRouterModelLayer({
+            model: benchmarkConfig.model,
+            apiKey: input.apiKey,
+            ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
+            sessionId: input.sessionId,
+            ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
+          }));
     const solverLayer = layerEffect(Solver)(
       gen(function* () {
         const model = yield* Model;

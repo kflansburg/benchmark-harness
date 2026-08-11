@@ -19,19 +19,19 @@ import type {
 } from "./mmlu-pro-prompt";
 import { parseOptions } from "./mmmu-shared";
 
-const MMLU_PRO_DATASET = "TIGER-Lab/MMLU-Pro";
+export const MMLU_PRO_DATASET = "TIGER-Lab/MMLU-Pro";
 
-const MMLU_PRO_CONFIG = "default";
+export const MMLU_PRO_CONFIG = "default";
 
-const MMLU_PRO_VALIDATION_SPLIT = "validation";
+export const MMLU_PRO_VALIDATION_SPLIT = "validation";
 
-const MMLU_PRO_TEST_SPLIT = "test";
+export const MMLU_PRO_TEST_SPLIT = "test";
 
-const MMLU_PRO_VALIDATION_ROWS = 100;
+export const MMLU_PRO_VALIDATION_ROWS = 100;
 
-const MMLU_PRO_PAGE_SIZE = 100;
+export const MMLU_PRO_PAGE_SIZE = 100;
 
-const MMLU_PRO_EXAMPLES_PER_CATEGORY = 5;
+export const MMLU_PRO_EXAMPLES_PER_CATEGORY = 5;
 
 type MmluProRecordToSample = (
   record: Readonly<Record<string, unknown>>,
@@ -64,7 +64,7 @@ function toCotExample(
   };
 }
 
-function collectCotExamples(
+export function collectCotExamples(
   rows: readonly {
     readonly row: Readonly<Record<string, unknown>>;
   }[]

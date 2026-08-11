@@ -40,7 +40,7 @@ function makeDracoLayer(
   const config = benchmarkConfig.panelConfig;
   const datasetLayer = makeDracoDatasetLayer(input.datasetRetry);
   const responsesLayer = makeResponsesLayer({
-    apiKey: input.apiKey,
+    apiKey: input.apiKey ?? "",
     ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
     sessionId: input.sessionId,
   });

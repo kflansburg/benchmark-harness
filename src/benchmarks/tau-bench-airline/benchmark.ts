@@ -94,7 +94,7 @@ function makeAirlineLayer(
       endpointId: benchmarkConfig.endpointId,
     }),
     userModelConfig: {
-      apiKey: input.apiKey,
+      apiKey: input.apiKey ?? "",
       model: benchmarkConfig.userModel,
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
@@ -115,7 +115,7 @@ function makeAirlineLayer(
     input.modelLayer ??
     makeOpenRouterModelLayer({
       model: benchmarkConfig.model,
-      apiKey: input.apiKey,
+      apiKey: input.apiKey ?? "",
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
       ...(input.modelRetry !== undefined && { retry: input.modelRetry }),

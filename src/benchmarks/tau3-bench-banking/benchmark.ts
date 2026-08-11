@@ -47,7 +47,7 @@ function makeBankingLayer(
   const solverOpts: SolverOpts = {
     ...(config.endpointId !== undefined && { endpointId: config.endpointId }),
     userModelConfig: {
-      apiKey: input.apiKey,
+      apiKey: input.apiKey ?? "",
       model: config.userModel,
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
@@ -70,7 +70,7 @@ function makeBankingLayer(
     input.modelLayer ??
     makeOpenRouterModelLayer({
       model: config.model,
-      apiKey: input.apiKey,
+      apiKey: input.apiKey ?? "",
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
       ...(input.modelRetry !== undefined && { retry: input.modelRetry }),

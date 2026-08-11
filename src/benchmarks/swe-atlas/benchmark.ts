@@ -55,7 +55,7 @@ function makeSweAtlasLayer(
     input.responsesModelLayer ??
     makeResponsesModelLayer({
       model: benchmarkConfig.model,
-      apiKey: input.apiKey,
+      apiKey: input.apiKey ?? "",
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
       ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
@@ -72,7 +72,7 @@ function makeSweAtlasLayer(
         makeSweAtlasSolver(model, sessionFactory, {
           track,
           model: benchmarkConfig.model,
-          apiKey: input.apiKey,
+          apiKey: input.apiKey ?? "",
           judgeModel: benchmarkConfig.judgeModel,
           stepLimit: benchmarkConfig.stepLimit,
           ...(benchmarkConfig.endpointId !== undefined && {

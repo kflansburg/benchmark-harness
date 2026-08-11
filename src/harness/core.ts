@@ -212,6 +212,7 @@ export class ModelError extends TaggedError("ModelError")<
     readonly status?: number;
     readonly message: string;
     readonly retryAfterMs?: number;
+    readonly systemic?: boolean;
   } & ModelErrorIdentifiers
 > {}
 
@@ -224,6 +225,9 @@ export function isRetryableModelError(error: ModelError): boolean {
 const SYSTEMIC_STATUS_CODES = new Set([401, 403, 404]);
 
 export function isSystemicModelError(error: ModelError): boolean {
+  if (error.systemic === true) {
+    return true;
+  }
   if (error.status === undefined) {
     return true;
   }

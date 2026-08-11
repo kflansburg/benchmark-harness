@@ -34,7 +34,7 @@ function makeTerminalBenchLayer(
   }
   const solverOpts: TerminalBenchSolverOpts = {
     model: benchmarkConfig.model,
-    apiKey: input.apiKey,
+    apiKey: input.apiKey ?? "",
     sessionId: input.sessionId,
     ...(benchmarkConfig.endpointId !== undefined && {
       endpointId: benchmarkConfig.endpointId,

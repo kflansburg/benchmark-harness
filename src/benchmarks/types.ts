@@ -11,7 +11,7 @@ import type { RetryConfig } from "../runtime/retry";
 import type { BenchmarkRunConfig } from "./benchmark-config";
 
 export interface BenchmarkRunInput {
-  readonly apiKey: string;
+  readonly apiKey?: string;
   readonly baseUrl?: string;
   readonly benchmarkConfig: BenchmarkRunConfig;
   readonly sessionId: string;
@@ -19,6 +19,7 @@ export interface BenchmarkRunInput {
   readonly modelRetry?: RetryConfig;
   readonly maxOutputTokensCeiling?: number;
   readonly modelLayer?: Layer<Model, Error, HttpClient.HttpClient>;
+  readonly datasetLayer?: Layer<Dataset>;
   readonly responsesModelLayer?: Layer<
     ResponsesModel,
     Error,

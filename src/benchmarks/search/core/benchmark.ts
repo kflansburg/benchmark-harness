@@ -99,7 +99,7 @@ export function makeSearchBenchmarkLayer(
     );
   }
   const responsesLayer = makeResponsesLayer({
-    apiKey: input.apiKey,
+    apiKey: input.apiKey ?? "",
     ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
     sessionId: input.sessionId,
   });

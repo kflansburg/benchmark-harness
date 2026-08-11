@@ -62,7 +62,7 @@ function makeWandrLayer(
     input.responsesModelLayer ??
     makeResponsesModelLayer({
       model: benchmarkConfig.model,
-      apiKey: input.apiKey,
+      apiKey: input.apiKey ?? "",
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
       ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
@@ -77,7 +77,7 @@ function makeWandrLayer(
       const sessionFactory = yield* SandboxSession;
       return Solver.of(
         makeWandrSolver(model, sessionFactory, {
-          apiKey: input.apiKey,
+          apiKey: input.apiKey ?? "",
           stepLimit: benchmarkConfig.stepLimit,
           serverTools: benchmarkConfig.serverTools,
           ...(benchmarkConfig.endpointId !== undefined && {
