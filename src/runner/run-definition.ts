@@ -24,6 +24,7 @@ import { runHarnessPromise } from "../internal/effect-logger";
 import type { AsyncEither } from "../internal/either";
 import { Either } from "../internal/either";
 import { wLog } from "../internal/log";
+import type { ResponsesModel } from "../providers/responses-model";
 import type { RunBenchmarkInput, RunBenchmarkOutput } from "./run-by-id";
 
 export interface RunBenchmarkDefinitionInput extends Omit<
@@ -34,6 +35,11 @@ export interface RunBenchmarkDefinitionInput extends Omit<
   readonly apiKey?: string;
   readonly modelLayer?: Layer<Model, Error, HttpClient.HttpClient>;
   readonly datasetLayer?: Layer<Dataset>;
+  readonly responsesModelLayer?: Layer<
+    ResponsesModel,
+    Error,
+    HttpClient.HttpClient
+  >;
 }
 
 export function runBenchmarkDefinition(
@@ -56,6 +62,9 @@ export function runBenchmarkDefinition(
     ...(input.modelLayer !== undefined && { modelLayer: input.modelLayer }),
     ...(input.datasetLayer !== undefined && {
       datasetLayer: input.datasetLayer,
+    }),
+    ...(input.responsesModelLayer !== undefined && {
+      responsesModelLayer: input.responsesModelLayer,
     }),
   });
   const progressLayer = layerSucceed(

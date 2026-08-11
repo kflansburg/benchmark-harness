@@ -1,13 +1,20 @@
 import { describe, expect, it } from "bun:test";
 
 import { fromIterable } from "effect/Chunk";
-import { gen, sleep, succeed as effectSucceed, sync } from "effect/Effect";
+import { gen, map, sleep, succeed as effectSucceed, sync } from "effect/Effect";
 import type { Layer } from "effect/Layer";
-import { succeed as layerSucceed } from "effect/Layer";
+import {
+  effect as layerEffect,
+  fail as layerFail,
+  mergeAll as layerMergeAll,
+  provide as layerProvide,
+  succeed as layerSucceed,
+} from "effect/Layer";
 import { fromChunk } from "effect/Stream";
 
 import type { GpqaBenchmarkConfig } from "../benchmarks/benchmark-config";
 import { defineChatBenchmark } from "../benchmarks/define-chat-benchmark";
+import type { Benchmark } from "../benchmarks/types";
 import type { Sample } from "../harness/core";
 import { MessageRole, ScoreValue } from "../harness/core";
 import { Dataset } from "../harness/dataset";
@@ -16,8 +23,10 @@ import type {
   CheckpointStoreService,
   ProgressReporterService,
 } from "../harness/progress";
-import { generate } from "../harness/solver";
+import { Scorer } from "../harness/scorer";
+import { generate, Solver } from "../harness/solver";
 import { Either } from "../internal/either";
+import { ResponsesModel } from "../providers/responses-model";
 import { runBenchmarkDefinition } from "./run-definition";
 
 function datasetLayer(samples: readonly Sample[]): Layer<Dataset> {
@@ -129,5 +138,88 @@ describe("runBenchmarkDefinition", () => {
       progressEvents.filter((event) => event.startsWith("start:"))
     ).toHaveLength(4);
     expect(progressEvents).toContain("complete:4");
+  });
+
+  it("executes with a supplied responses model layer", async () => {
+    const generatedInputs: (readonly Record<string, unknown>[])[] = [];
+    const responsesModelLayer = layerSucceed(
+      ResponsesModel,
+      ResponsesModel.of({
+        generate: (input) => {
+          generatedInputs.push(input);
+          return effectSucceed({
+            outputItems: [],
+            functionCalls: [],
+            text: "correct",
+            generationTimeMs: 1,
+          });
+        },
+      })
+    );
+    const benchmark: Benchmark = {
+      id: "responses-test",
+      temperature: 0,
+      defaultEpochs: 1,
+      makeDatasetLayer: () => datasetLayer(samples.slice(0, 1)),
+      makeLayer: (input) => {
+        const modelLayer =
+          input.responsesModelLayer ??
+          layerFail(new Error("responses model layer was not supplied"));
+        const solverLayer = layerEffect(Solver)(
+          gen(function* () {
+            const model = yield* ResponsesModel;
+            return Solver.of((state) =>
+              model
+                .generate([{ role: "user", content: state.sample.input }], {})
+                .pipe(
+                  map((turn) => ({
+                    ...state,
+                    output: {
+                      completion: turn.text,
+                      message: {
+                        role: MessageRole.Assistant,
+                        content: turn.text,
+                      },
+                    },
+                    completed: true,
+                  }))
+                )
+            );
+          })
+        ).pipe(layerProvide(modelLayer));
+        return layerMergeAll(
+          input.datasetLayer ?? datasetLayer(samples.slice(0, 1)),
+          solverLayer,
+          layerSucceed(
+            Scorer,
+            Scorer.of((_state, target) =>
+              effectSucceed({
+                value: ScoreValue.Correct,
+                answer: target.text,
+                explanation: "correct",
+              })
+            )
+          )
+        );
+      },
+    };
+
+    const output = await runBenchmarkDefinition({
+      benchmark,
+      benchmarkConfig: {
+        benchmarkId: "gpqa_diamond",
+        model: "injected-responses-model",
+      },
+      sessionId: "responses-session",
+      responsesModelLayer,
+      datasetLayer: datasetLayer(samples.slice(0, 1)),
+      epochs: 1,
+      maxConcurrency: 1,
+    });
+
+    expect(Either.isRight(output)).toBe(true);
+    expect(generatedInputs).toEqual([
+      [{ role: "user", content: "Question 0" }],
+    ]);
   });
 });
