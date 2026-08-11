@@ -387,6 +387,35 @@ describe("runBenchmark", () => {
       )
     ).rejects.toThrow("Injected transport is unavailable");
   });
+  it("uses an explicit non-systemic override before status classification", async () => {
+    const service: ModelService = {
+      generate: () =>
+        effectFail(
+          new ModelError({
+            message: "Injected transport returned unauthorized",
+            status: 401,
+            systemic: false,
+          })
+        ),
+    };
+    const model = { service, layer: layerSucceed(Model, Model.of(service)) };
+    const layers = mergeAll(
+      fakeDatasetLayer(SAMPLES.slice(0, 1)),
+      layerSucceed(
+        Solver,
+        Solver.of(generate(model.service, { temperature: 0 }))
+      ),
+      layerSucceed(Scorer, Scorer.of(mcqScorer)),
+      model.layer,
+      noopProgressLayer,
+      noopCheckpointLayer
+    );
+
+    const result = await runPromise(
+      runBenchmark({ epochs: 1, maxConcurrency: 1 }).pipe(provide(layers))
+    );
+    expect(result.sampleScores[0]?.score.value).toBe(ScoreValue.Incorrect);
+  });
   it("accumulates generationTimeMs even when the response has no usage object", async () => {
     const model: {
       service: ModelService;

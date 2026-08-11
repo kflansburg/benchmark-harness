@@ -176,7 +176,6 @@ function sampleState() {
 
 const SOLVER_OPTS = {
   model: "anthropic/claude-opus-4.5",
-  apiKey: "sk-test",
   stepLimit: 10,
   endpointId: "ep-pinned",
 } as const;

@@ -60,7 +60,6 @@ export const REMOTE_REWARD_JSON_PATH = "/logs/verifier/reward.json" as const;
 
 export interface DeepSweSolverOpts {
   readonly model: string;
-  readonly apiKey: string;
   readonly endpointId?: string;
   readonly stepLimit: number;
   readonly inference?: InferenceOverride;

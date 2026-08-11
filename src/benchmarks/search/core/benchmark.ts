@@ -98,8 +98,11 @@ export function makeSearchBenchmarkLayer(
       new Error(`${definition.benchmarkId} received mismatched benchmarkConfig`)
     );
   }
+  if (input.apiKey === undefined || input.apiKey.length === 0) {
+    return fail(new Error(`${definition.benchmarkId} requires an API key`));
+  }
   const responsesLayer = makeResponsesLayer({
-    apiKey: input.apiKey ?? "",
+    apiKey: input.apiKey,
     ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
     sessionId: input.sessionId,
   });

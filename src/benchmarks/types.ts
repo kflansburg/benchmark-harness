@@ -8,12 +8,14 @@ import type { Scorer } from "../harness/scorer";
 import type { Solver } from "../harness/solver";
 import type { ResponsesModel } from "../providers/responses-model";
 import type { RetryConfig } from "../runtime/retry";
-import type { BenchmarkRunConfig } from "./benchmark-config";
+import type { BenchmarkConfig, BenchmarkRunConfig } from "./benchmark-config";
 
-export interface BenchmarkRunInput {
+export interface BenchmarkRunInput<
+  C extends BenchmarkConfig = BenchmarkRunConfig,
+> {
   readonly apiKey?: string;
   readonly baseUrl?: string;
-  readonly benchmarkConfig: BenchmarkRunConfig;
+  readonly benchmarkConfig: C;
   readonly sessionId: string;
   readonly datasetRetry?: RetryConfig;
   readonly modelRetry?: RetryConfig;
@@ -32,11 +34,11 @@ export interface BenchmarkPrimaryScore {
   readonly weight: number;
 }
 
-export interface Benchmark {
+export interface Benchmark<C extends BenchmarkConfig = BenchmarkRunConfig> {
   readonly id: string;
   readonly makeDatasetLayer: (retryConfig?: RetryConfig) => Layer<Dataset>;
   readonly makeLayer: (
-    input: BenchmarkRunInput
+    input: BenchmarkRunInput<C>
   ) => Layer<Dataset | Solver | Scorer, Error, HttpClient.HttpClient>;
   readonly temperature: number;
   readonly defaultEpochs: number;

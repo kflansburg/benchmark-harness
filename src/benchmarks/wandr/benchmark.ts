@@ -50,6 +50,10 @@ function makeWandrLayer(
       new Error(`${WANDR_DATASET_ID} received mismatched benchmarkConfig`)
     );
   }
+  if (input.apiKey === undefined || input.apiKey.length === 0) {
+    return layerFail(new Error("wandr requires an API key"));
+  }
+  const apiKey = input.apiKey;
   const datasetLayer = makeWandrDatasetLayer({
     ...(benchmarkConfig.taskSubset !== undefined && {
       taskSubset: benchmarkConfig.taskSubset,
@@ -62,7 +66,7 @@ function makeWandrLayer(
     input.responsesModelLayer ??
     makeResponsesModelLayer({
       model: benchmarkConfig.model,
-      apiKey: input.apiKey ?? "",
+      apiKey,
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
       ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
@@ -77,7 +81,7 @@ function makeWandrLayer(
       const sessionFactory = yield* SandboxSession;
       return Solver.of(
         makeWandrSolver(model, sessionFactory, {
-          apiKey: input.apiKey ?? "",
+          apiKey,
           stepLimit: benchmarkConfig.stepLimit,
           serverTools: benchmarkConfig.serverTools,
           ...(benchmarkConfig.endpointId !== undefined && {

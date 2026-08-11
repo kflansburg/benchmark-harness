@@ -37,10 +37,13 @@ function makeDracoLayer(
   if (benchmarkConfig.benchmarkId !== "draco") {
     return fail(new Error("draco received mismatched benchmarkConfig"));
   }
+  if (input.apiKey === undefined || input.apiKey.length === 0) {
+    return fail(new Error("draco requires an API key"));
+  }
   const config = benchmarkConfig.panelConfig;
   const datasetLayer = makeDracoDatasetLayer(input.datasetRetry);
   const responsesLayer = makeResponsesLayer({
-    apiKey: input.apiKey ?? "",
+    apiKey: input.apiKey,
     ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
     sessionId: input.sessionId,
   });

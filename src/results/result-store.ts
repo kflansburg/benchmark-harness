@@ -5,17 +5,22 @@ import { Tag } from "effect/Context";
 import type { Effect } from "effect/Effect";
 import { succeed } from "effect/Effect";
 
-import type { BenchmarkRunConfig } from "../benchmarks/benchmark-config";
+import type {
+  BenchmarkConfig,
+  BenchmarkRunConfig,
+} from "../benchmarks/benchmark-config";
 import { modelFromConfig } from "../benchmarks/benchmark-config";
 import type { Benchmark } from "../benchmarks/types";
 import type { RunResult } from "../harness/run";
 import { runResultToParquet } from "./parquet";
 
-export interface ResultStoreService {
+export interface ResultStoreService<
+  C extends BenchmarkConfig = BenchmarkRunConfig,
+> {
   readonly write: (opts: {
     readonly result: RunResult;
-    readonly benchmark: Benchmark;
-    readonly benchmarkConfig: BenchmarkRunConfig;
+    readonly benchmark: Benchmark<C>;
+    readonly benchmarkConfig: C;
     readonly epochs: number;
     readonly sessionId: string;
   }) => Effect<string | null>;

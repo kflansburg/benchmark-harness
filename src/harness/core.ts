@@ -225,8 +225,8 @@ export function isRetryableModelError(error: ModelError): boolean {
 const SYSTEMIC_STATUS_CODES = new Set([401, 403, 404]);
 
 export function isSystemicModelError(error: ModelError): boolean {
-  if (error.systemic === true) {
-    return true;
+  if (error.systemic !== undefined) {
+    return error.systemic;
   }
   if (error.status === undefined) {
     return true;

@@ -63,7 +63,7 @@ export function defineChatBenchmark<
         : definition.makeDatasetLayer(input.datasetRetry));
     const modelLayer =
       input.modelLayer ??
-      (input.apiKey === undefined
+      (input.apiKey === undefined || input.apiKey.length === 0
         ? layerFail(new Error("An API key or model layer is required"))
         : makeOpenRouterModelLayer({
             model: benchmarkConfig.model,

@@ -32,9 +32,12 @@ function makeTerminalBenchLayer(
       new Error("terminal_bench received mismatched benchmarkConfig")
     );
   }
+  if (input.apiKey === undefined || input.apiKey.length === 0) {
+    return layerFail(new Error("terminal_bench requires an API key"));
+  }
   const solverOpts: TerminalBenchSolverOpts = {
     model: benchmarkConfig.model,
-    apiKey: input.apiKey ?? "",
+    apiKey: input.apiKey,
     sessionId: input.sessionId,
     ...(benchmarkConfig.endpointId !== undefined && {
       endpointId: benchmarkConfig.endpointId,

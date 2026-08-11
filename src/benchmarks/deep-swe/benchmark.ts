@@ -45,13 +45,17 @@ function makeDeepSweLayer(
   });
   const modelLayer =
     input.responsesModelLayer ??
-    makeResponsesModelLayer({
-      model: benchmarkConfig.model,
-      apiKey: input.apiKey ?? "",
-      ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
-      sessionId: input.sessionId,
-      ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
-    });
+    (input.apiKey === undefined || input.apiKey.length === 0
+      ? layerFail(
+          new Error("deep_swe requires an API key or responses model layer")
+        )
+      : makeResponsesModelLayer({
+          model: benchmarkConfig.model,
+          apiKey: input.apiKey,
+          ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
+          sessionId: input.sessionId,
+          ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
+        }));
   const sandboxLayer = makeModalSandboxLayer({
     appName: "openrouter-deep-swe",
     environment: benchmarkConfig.modalEnv,
@@ -63,7 +67,6 @@ function makeDeepSweLayer(
       return Solver.of(
         makeDeepSweSolver(model, sessionFactory, {
           model: benchmarkConfig.model,
-          apiKey: input.apiKey ?? "",
           stepLimit: benchmarkConfig.stepLimit,
           ...(benchmarkConfig.endpointId !== undefined && {
             endpointId: benchmarkConfig.endpointId,

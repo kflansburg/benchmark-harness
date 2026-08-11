@@ -42,6 +42,10 @@ function makeSweAtlasLayer(
       new Error(`${expectedId} received mismatched benchmarkConfig`)
     );
   }
+  if (input.apiKey === undefined || input.apiKey.length === 0) {
+    return layerFail(new Error(`${expectedId} requires an API key`));
+  }
+  const apiKey = input.apiKey;
   const datasetLayer = makeSweAtlasDatasetLayer({
     track,
     ...(benchmarkConfig.taskSubset !== undefined && {
@@ -55,7 +59,7 @@ function makeSweAtlasLayer(
     input.responsesModelLayer ??
     makeResponsesModelLayer({
       model: benchmarkConfig.model,
-      apiKey: input.apiKey ?? "",
+      apiKey,
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
       ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
@@ -72,7 +76,7 @@ function makeSweAtlasLayer(
         makeSweAtlasSolver(model, sessionFactory, {
           track,
           model: benchmarkConfig.model,
-          apiKey: input.apiKey ?? "",
+          apiKey,
           judgeModel: benchmarkConfig.judgeModel,
           stepLimit: benchmarkConfig.stepLimit,
           ...(benchmarkConfig.endpointId !== undefined && {

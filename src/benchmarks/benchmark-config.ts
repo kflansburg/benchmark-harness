@@ -21,6 +21,12 @@ import {
 } from "./terminal-bench/schema";
 import { WandrOptionsSchema } from "./wandr/schema";
 
+export interface BenchmarkConfig {
+  readonly benchmarkId: string;
+  readonly model?: string;
+  readonly maxRetries?: number;
+}
+
 export const GEMINI_MEDIA_RESOLUTIONS = [
   "MEDIA_RESOLUTION_UNSPECIFIED",
   "MEDIA_RESOLUTION_LOW",
@@ -341,10 +347,8 @@ export function isSearchBenchmarkConfig(
   return SEARCH_BENCHMARK_ID_SET.has(config.benchmarkId);
 }
 
-export function modelFromConfig(
-  config: BenchmarkRunConfig
-): string | undefined {
-  return isModelBenchmarkConfig(config) ? config.model : undefined;
+export function modelFromConfig(config: BenchmarkConfig): string | undefined {
+  return config.model;
 }
 
 export function endpointIdFromConfig(

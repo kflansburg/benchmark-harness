@@ -89,12 +89,18 @@ function makeAirlineLayer(
       )
     );
   }
+  if (input.apiKey === undefined || input.apiKey.length === 0) {
+    return layerFail(
+      new Error("tau_bench_verified_airline requires an API key")
+    );
+  }
+  const apiKey = input.apiKey;
   const solverOpts: SolverOpts = {
     ...(benchmarkConfig.endpointId !== undefined && {
       endpointId: benchmarkConfig.endpointId,
     }),
     userModelConfig: {
-      apiKey: input.apiKey ?? "",
+      apiKey,
       model: benchmarkConfig.userModel,
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
@@ -115,7 +121,7 @@ function makeAirlineLayer(
     input.modelLayer ??
     makeOpenRouterModelLayer({
       model: benchmarkConfig.model,
-      apiKey: input.apiKey ?? "",
+      apiKey,
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
       ...(input.modelRetry !== undefined && { retry: input.modelRetry }),

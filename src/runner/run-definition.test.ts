@@ -1,7 +1,14 @@
 import { describe, expect, it } from "bun:test";
 
 import { fromIterable } from "effect/Chunk";
-import { gen, map, sleep, succeed as effectSucceed, sync } from "effect/Effect";
+import {
+  dieMessage,
+  gen,
+  map,
+  sleep,
+  succeed as effectSucceed,
+  sync,
+} from "effect/Effect";
 import type { Layer } from "effect/Layer";
 import {
   effect as layerEffect,
@@ -12,7 +19,10 @@ import {
 } from "effect/Layer";
 import { fromChunk } from "effect/Stream";
 
-import type { GpqaBenchmarkConfig } from "../benchmarks/benchmark-config";
+import type {
+  BenchmarkConfig,
+  GpqaBenchmarkConfig,
+} from "../benchmarks/benchmark-config";
 import { defineChatBenchmark } from "../benchmarks/define-chat-benchmark";
 import type { Benchmark } from "../benchmarks/types";
 import type { Sample } from "../harness/core";
@@ -48,6 +58,73 @@ const samples = Array.from({ length: 4 }, (_, index) => ({
   input: `Question ${index}`,
   target: { text: "correct" },
 }));
+
+const chatBenchmark = defineChatBenchmark<GpqaBenchmarkConfig>({
+  id: "gpqa_diamond",
+  temperature: 0,
+  defaultEpochs: 1,
+  isConfig: (config): config is GpqaBenchmarkConfig =>
+    config.benchmarkId === "gpqa_diamond",
+  makeDatasetLayer: () => datasetLayer(samples.slice(0, 1)),
+  scorer: (_state, target) =>
+    effectSucceed({
+      value: ScoreValue.Correct,
+      answer: target.text,
+      explanation: "correct",
+    }),
+  makeSolver: (model) => generate(model, { temperature: 0 }),
+});
+
+interface ResponsesTestConfig extends BenchmarkConfig {
+  readonly benchmarkId: "responses-test";
+  readonly model: string;
+  readonly transport: "responses";
+}
+
+describe("Worker runtime", () => {
+  it("runs without a process global", async () => {
+    const processDescriptor = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "process"
+    );
+    const modelLayer = layerSucceed(
+      Model,
+      Model.of({
+        generate: () =>
+          effectSucceed({
+            completion: "correct",
+            message: {
+              role: MessageRole.Assistant,
+              content: "correct",
+            },
+          }),
+      })
+    );
+    Reflect.deleteProperty(globalThis, "process");
+    try {
+      const output = await runBenchmarkDefinition({
+        benchmark: chatBenchmark,
+        benchmarkConfig: {
+          benchmarkId: "gpqa_diamond",
+          model: "injected-model",
+        },
+        sessionId: "worker-runtime",
+        modelLayer,
+        datasetLayer: datasetLayer(samples.slice(0, 1)),
+        resultStore: {
+          write: () => dieMessage("persistence unavailable"),
+        },
+        epochs: 1,
+        maxConcurrency: 1,
+      });
+      expect(Either.isRight(output)).toBe(true);
+    } finally {
+      if (processDescriptor !== undefined) {
+        Object.defineProperty(globalThis, "process", processDescriptor);
+      }
+    }
+  });
+});
 
 describe("runBenchmarkDefinition", () => {
   it("runs a supplied benchmark and runtime services without the registry", async () => {
@@ -93,24 +170,8 @@ describe("runBenchmarkDefinition", () => {
       write: async () => {},
       remove: async () => {},
     };
-    const benchmark = defineChatBenchmark<GpqaBenchmarkConfig>({
-      id: "gpqa_diamond",
-      temperature: 0,
-      defaultEpochs: 1,
-      isConfig: (config): config is GpqaBenchmarkConfig =>
-        config.benchmarkId === "gpqa_diamond",
-      makeDatasetLayer: () => datasetLayer(samples.slice(0, 1)),
-      scorer: (_state, target) =>
-        effectSucceed({
-          value: ScoreValue.Correct,
-          answer: target.text,
-          explanation: "correct",
-        }),
-      makeSolver: (model) => generate(model, { temperature: 0 }),
-    });
-
     const output = await runBenchmarkDefinition({
-      benchmark,
+      benchmark: chatBenchmark,
       benchmarkConfig: {
         benchmarkId: "gpqa_diamond",
         model: "injected-model",
@@ -140,6 +201,27 @@ describe("runBenchmarkDefinition", () => {
     expect(progressEvents).toContain("complete:4");
   });
 
+  it("returns a credential error instead of constructing a malformed request", async () => {
+    const output = await runBenchmarkDefinition({
+      benchmark: chatBenchmark,
+      benchmarkConfig: {
+        benchmarkId: "gpqa_diamond",
+        model: "default-model",
+      },
+      sessionId: "missing-credential",
+      apiKey: "",
+      datasetLayer: datasetLayer(samples.slice(0, 1)),
+      epochs: 1,
+      maxConcurrency: 1,
+    });
+
+    expect(Either.isLeft(output)).toBe(true);
+    if (Either.isRight(output)) {
+      throw new Error("expected the run to fail");
+    }
+    expect(output.left).toContain("An API key or model layer is required");
+  });
+
   it("executes with a supplied responses model layer", async () => {
     const generatedInputs: (readonly Record<string, unknown>[])[] = [];
     const responsesModelLayer = layerSucceed(
@@ -156,7 +238,7 @@ describe("runBenchmarkDefinition", () => {
         },
       })
     );
-    const benchmark: Benchmark = {
+    const benchmark: Benchmark<ResponsesTestConfig> = {
       id: "responses-test",
       temperature: 0,
       defaultEpochs: 1,
@@ -207,8 +289,9 @@ describe("runBenchmarkDefinition", () => {
     const output = await runBenchmarkDefinition({
       benchmark,
       benchmarkConfig: {
-        benchmarkId: "gpqa_diamond",
+        benchmarkId: "responses-test",
         model: "injected-responses-model",
+        transport: "responses",
       },
       sessionId: "responses-session",
       responsesModelLayer,

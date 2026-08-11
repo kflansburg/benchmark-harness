@@ -14,6 +14,7 @@ import { make as makeManagedRuntime } from "effect/ManagedRuntime";
 
 import {
   emitLog,
+  environmentVariable,
   GCP_SEVERITY_BY_LEVEL,
   resolveMinimumHarnessLogLevel,
 } from "./log";
@@ -63,7 +64,7 @@ export function makeHarnessLoggerLayer(
 }
 
 export const harnessLoggerLayer: Layer<never> = unwrapEffect(
-  sync(() => makeHarnessLoggerLayer(process.env.LOG_LEVEL))
+  sync(() => makeHarnessLoggerLayer(environmentVariable("LOG_LEVEL")))
 );
 
 let harnessRuntime: ManagedRuntime<never, never> | undefined;

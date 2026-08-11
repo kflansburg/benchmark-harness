@@ -80,8 +80,21 @@ const LOG_LEVEL_RANK = {
   none: 7,
 } as const satisfies Record<LogLevel, number>;
 
+export function environmentVariable(name: string): string | undefined {
+  const processValue: unknown = Reflect.get(globalThis, "process");
+  if (typeof processValue !== "object" || processValue === null) {
+    return undefined;
+  }
+  const environment: unknown = Reflect.get(processValue, "env");
+  if (typeof environment !== "object" || environment === null) {
+    return undefined;
+  }
+  const value: unknown = Reflect.get(environment, name);
+  return typeof value === "string" ? value : undefined;
+}
+
 function shouldEmit(level: LogLevel): boolean {
-  const floor = resolveMinimumHarnessLogLevel(process.env.LOG_LEVEL);
+  const floor = resolveMinimumHarnessLogLevel(environmentVariable("LOG_LEVEL"));
   return LOG_LEVEL_RANK[level] >= LOG_LEVEL_RANK[floor];
 }
 
@@ -93,8 +106,8 @@ export interface EmitLogOptions {
 
 function isProduction(): boolean {
   return (
-    process.env.NEXT_PUBLIC_VERCEL_ENV === "production" ||
-    process.env.OR_ENV === "production"
+    environmentVariable("NEXT_PUBLIC_VERCEL_ENV") === "production" ||
+    environmentVariable("OR_ENV") === "production"
   );
 }
 
@@ -109,7 +122,7 @@ export function emitLog({ level, message, context }: EmitLogOptions): void {
       message,
       extra,
       level,
-      ...(process.env.K_SERVICE
+      ...(environmentVariable("K_SERVICE") !== undefined
         ? { severity: GCP_SEVERITY_BY_LEVEL[level] }
         : {}),
     };

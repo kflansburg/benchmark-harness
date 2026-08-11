@@ -8,6 +8,10 @@ import {
   succeed as layerSucceed,
 } from "effect/Layer";
 
+import type {
+  BenchmarkConfig,
+  BenchmarkRunConfig,
+} from "../benchmarks/benchmark-config";
 import { modelFromConfig } from "../benchmarks/benchmark-config";
 import type { Benchmark } from "../benchmarks/types";
 import type { Dataset } from "../harness/dataset";
@@ -25,13 +29,17 @@ import type { AsyncEither } from "../internal/either";
 import { Either } from "../internal/either";
 import { wLog } from "../internal/log";
 import type { ResponsesModel } from "../providers/responses-model";
+import type { ResultStoreService } from "../results/result-store";
 import type { RunBenchmarkInput, RunBenchmarkOutput } from "./run-by-id";
 
-export interface RunBenchmarkDefinitionInput extends Omit<
+export interface RunBenchmarkDefinitionInput<
+  C extends BenchmarkConfig = BenchmarkRunConfig,
+> extends Omit<
   RunBenchmarkInput,
-  "benchmarkId" | "apiKey"
+  "benchmarkId" | "apiKey" | "benchmarkConfig" | "resultStore"
 > {
-  readonly benchmark: Benchmark;
+  readonly benchmark: Benchmark<C>;
+  readonly benchmarkConfig: C;
   readonly apiKey?: string;
   readonly modelLayer?: Layer<Model, Error, HttpClient.HttpClient>;
   readonly datasetLayer?: Layer<Dataset>;
@@ -40,10 +48,11 @@ export interface RunBenchmarkDefinitionInput extends Omit<
     Error,
     HttpClient.HttpClient
   >;
+  readonly resultStore?: ResultStoreService<C>;
 }
 
-export function runBenchmarkDefinition(
-  input: RunBenchmarkDefinitionInput
+export function runBenchmarkDefinition<C extends BenchmarkConfig>(
+  input: RunBenchmarkDefinitionInput<C>
 ): AsyncEither<RunBenchmarkOutput, string> {
   const { benchmark } = input;
   const maxRetries = input.benchmarkConfig.maxRetries;

@@ -44,10 +44,14 @@ function makeBankingLayer(
     );
   }
   const config = configParsed.right;
+  if (input.apiKey === undefined || input.apiKey.length === 0) {
+    return layerFail(new Error("tau3_bench_banking requires an API key"));
+  }
+  const apiKey = input.apiKey;
   const solverOpts: SolverOpts = {
     ...(config.endpointId !== undefined && { endpointId: config.endpointId }),
     userModelConfig: {
-      apiKey: input.apiKey ?? "",
+      apiKey,
       model: config.userModel,
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
@@ -70,7 +74,7 @@ function makeBankingLayer(
     input.modelLayer ??
     makeOpenRouterModelLayer({
       model: config.model,
-      apiKey: input.apiKey ?? "",
+      apiKey,
       ...(input.baseUrl !== undefined && { baseUrl: input.baseUrl }),
       sessionId: input.sessionId,
       ...(input.modelRetry !== undefined && { retry: input.modelRetry }),
