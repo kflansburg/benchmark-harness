@@ -1,0 +1,19 @@
+src/runner/run-definition.ts
+  s_60613d974684d9::t_92f4fc74a43c74 27,38-42,66-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7a651c708ea3cad646783b89d04839a047c21b2b",
+  "prompts": {},
+  "sessions": {
+    "s_60613d974684d9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_00dddb54affe43rqt4ZuGlWulb",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Kevin Flansburg <kflansburg@cloudflare.com>"
+    }
+  }
+}
