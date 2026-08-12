@@ -1,0 +1,21 @@
+src/harness/run.test.ts
+  s_f8c2ecd3b504e8::t_98e44485075823 178,183-228
+src/harness/run.ts
+  s_f8c2ecd3b504e8::t_20773e06155599 71,160-164,166-169,353-358
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "39a446a7d3dfbf6fea983faaf3ad806cadfa6ec3",
+  "prompts": {},
+  "sessions": {
+    "s_f8c2ecd3b504e8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_00bfae41affeFgGTxvBCTvn4TR",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Kevin Flansburg <kflansburg@cloudflare.com>"
+    }
+  }
+}
