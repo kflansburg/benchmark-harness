@@ -1,0 +1,19 @@
+src/harness/run.ts
+  s_f8c2ecd3b504e8::t_4dcd7728dd47f7 62-64,68-73,83-85,158-172,188-190,347-349
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4612552e2924f06e9aa03d429a69ef1f22f1973a",
+  "prompts": {},
+  "sessions": {
+    "s_f8c2ecd3b504e8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_00bfae41affeFgGTxvBCTvn4TR",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Kevin Flansburg <kflansburg@cloudflare.com>"
+    }
+  }
+}
