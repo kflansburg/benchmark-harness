@@ -170,6 +170,13 @@ describe("runBenchmark", () => {
     expect(result.metrics.correctAnswers).toBe(1);
     expect(result.usage.outputTokens).toBe(30);
     expect(result.usage.generationTimeMs).toBe(600);
+    expect(result.usageCoveredEvaluations).toBe(6);
+    expect(result.generationTimeCoveredEvaluations).toBe(6);
+    expect(result.usageCoverage).toEqual({
+      inputTokens: 6,
+      outputTokens: 6,
+      reasoningTokens: 0,
+    });
     expect(result.sampleScores[0]?.generationIds).toEqual(["fake-Q1 target B"]);
   });
   it("captures per-sample message trajectories", async () => {

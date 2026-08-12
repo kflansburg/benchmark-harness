@@ -59,7 +59,16 @@ export interface RunConfig {
 export interface RunResult {
   readonly metrics: AggregateMetrics;
   readonly usage: UsageTotals;
+  readonly usageCoveredEvaluations?: number;
+  readonly usageCoverage?: UsageCoverage;
+  readonly generationTimeCoveredEvaluations?: number;
   readonly sampleScores: readonly SampleScore[];
+}
+
+export interface UsageCoverage {
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly reasoningTokens: number;
 }
 
 interface SampleEpoch {
@@ -71,6 +80,9 @@ interface SampleEpoch {
 interface FoldAccumulator {
   scores: SampleScore[];
   usage: UsageTotals;
+  usageCoveredEvaluations: number;
+  usageCoverage: UsageCoverage;
+  generationTimeCoveredEvaluations: number;
 }
 
 type EvalOutcome = {
@@ -143,6 +155,21 @@ function accumulateOutcome(
 ): FoldAccumulator {
   acc.scores.push(item.sampleScore);
   const u = item.usage;
+  if (u !== undefined) {
+    acc.usageCoveredEvaluations += 1;
+    acc.usageCoverage = {
+      inputTokens:
+        acc.usageCoverage.inputTokens + (u.inputTokens === undefined ? 0 : 1),
+      outputTokens:
+        acc.usageCoverage.outputTokens + (u.outputTokens === undefined ? 0 : 1),
+      reasoningTokens:
+        acc.usageCoverage.reasoningTokens +
+        (u.reasoningTokens === undefined ? 0 : 1),
+    };
+  }
+  if (item.generationTimeMs !== undefined) {
+    acc.generationTimeCoveredEvaluations += 1;
+  }
   acc.usage = {
     inputTokens: acc.usage.inputTokens + (u?.inputTokens ?? 0),
     outputTokens: acc.usage.outputTokens + (u?.outputTokens ?? 0),
@@ -158,6 +185,9 @@ function finalizeRun(acc: FoldAccumulator): RunResult {
   return {
     metrics: aggregateScores(acc.scores),
     usage: acc.usage,
+    usageCoveredEvaluations: acc.usageCoveredEvaluations,
+    usageCoverage: acc.usageCoverage,
+    generationTimeCoveredEvaluations: acc.generationTimeCoveredEvaluations,
     sampleScores: acc.scores,
   };
 }
@@ -314,6 +344,9 @@ export function runBenchmark(
       const initialAcc: FoldAccumulator = {
         scores: [],
         usage: { ...ZERO_USAGE },
+        usageCoveredEvaluations: 0,
+        usageCoverage: { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 },
+        generationTimeCoveredEvaluations: 0,
       };
       return sampleEpochs.pipe(
         streamMapEffect(
