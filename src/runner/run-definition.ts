@@ -1,6 +1,6 @@
 import { FetchHttpClient } from "@effect/platform";
 import type { HttpClient } from "@effect/platform";
-import { provide } from "effect/Effect";
+import { match as effectMatch, provide } from "effect/Effect";
 import type { Layer } from "effect/Layer";
 import {
   mergeAll as layerMergeAll,
@@ -14,6 +14,13 @@ import type {
 } from "../benchmarks/benchmark-config";
 import { modelFromConfig } from "../benchmarks/benchmark-config";
 import type { Benchmark } from "../benchmarks/types";
+import {
+  DatasetError,
+  isRetryableModelError,
+  isSystemicModelError,
+  ModelError,
+  SolverError,
+} from "../harness/core";
 import type { Dataset } from "../harness/dataset";
 import type { Model } from "../harness/model";
 import {
@@ -51,9 +58,17 @@ export interface RunBenchmarkDefinitionInput<
   readonly resultStore?: ResultStoreService<C>;
 }
 
+export interface BenchmarkExecutionError {
+  readonly category: "model" | "dataset" | "solver" | "internal";
+  readonly code?: string;
+  readonly status?: number;
+  readonly retryable: boolean;
+  readonly systemic: boolean;
+}
+
 export function runBenchmarkDefinition<C extends BenchmarkConfig>(
   input: RunBenchmarkDefinitionInput<C>
-): AsyncEither<RunBenchmarkOutput, string> {
+): AsyncEither<RunBenchmarkOutput, BenchmarkExecutionError> {
   const { benchmark } = input;
   const maxRetries = input.benchmarkConfig.maxRetries;
   const benchmarkLayer = benchmark.makeLayer({
@@ -106,10 +121,20 @@ export function runBenchmarkDefinition<C extends BenchmarkConfig>(
   const runOpts =
     input.abortSignal !== undefined ? { signal: input.abortSignal } : undefined;
   return runHarnessPromise(
-    runBenchmark(runConfig).pipe(provide(layers)),
+    runBenchmark(runConfig).pipe(
+      provide(layers),
+      effectMatch({
+        onFailure: (error) => Either.left(toBenchmarkExecutionError(error)),
+        onSuccess: (result) => Either.right(result),
+      })
+    ),
     runOpts
   )
-    .then((result) => {
+    .then((execution) => {
+      if (Either.isLeft(execution)) {
+        return execution;
+      }
+      const result = execution.right;
       if (input.resultStore !== undefined) {
         return runHarnessPromise(
           input.resultStore.write({
@@ -130,5 +155,62 @@ export function runBenchmarkDefinition<C extends BenchmarkConfig>(
       }
       return Either.right({ result, resultsPath: null });
     })
-    .catch((error) => Either.left(String(error)));
+    .catch((error) => {
+      if (input.abortSignal?.aborted === true) throw error;
+      return Either.left(INTERNAL_EXECUTION_ERROR);
+    });
+}
+
+const INTERNAL_EXECUTION_ERROR = {
+  category: "internal",
+  retryable: false,
+  systemic: true,
+} as const satisfies BenchmarkExecutionError;
+
+function toBenchmarkExecutionError(error: unknown): BenchmarkExecutionError {
+  if (error instanceof ModelError) {
+    return {
+      category: "model",
+      ...(safeStatus(error.status) !== undefined && {
+        status: safeStatus(error.status),
+      }),
+      ...(safeCode(error) !== undefined && { code: safeCode(error) }),
+      retryable: isRetryableModelError(error),
+      systemic: isSystemicModelError(error),
+    };
+  }
+  if (error instanceof DatasetError) {
+    const retryable = safeBoolean(error, "retryable") ?? false;
+    return {
+      category: "dataset",
+      ...(safeCode(error) !== undefined && { code: safeCode(error) }),
+      retryable,
+      systemic: !retryable,
+    };
+  }
+  if (error instanceof SolverError) {
+    return { category: "solver", retryable: false, systemic: true };
+  }
+  return INTERNAL_EXECUTION_ERROR;
+}
+
+function safeCode(error: object): string | undefined {
+  const value = "code" in error ? error.code : undefined;
+  return typeof value === "string" && /^[a-z0-9_]{1,64}$/u.test(value)
+    ? value
+    : undefined;
+}
+
+function safeStatus(value: number | undefined): number | undefined {
+  return Number.isSafeInteger(value) &&
+    value !== undefined &&
+    value >= 100 &&
+    value <= 599
+    ? value
+    : undefined;
+}
+
+function safeBoolean(error: object, key: string): boolean | undefined {
+  const value = key in error ? error[key as keyof typeof error] : undefined;
+  return typeof value === "boolean" ? value : undefined;
 }

@@ -154,8 +154,9 @@ function accumulateOutcome(
   acc: FoldAccumulator,
   item: EvalOutcome
 ): FoldAccumulator {
-  acc.scores.push(item.sampleScore);
   const u = item.usage;
+  validateUsage(u, item.generationTimeMs);
+  acc.scores.push(item.sampleScore);
   if (u !== undefined) {
     const hasInput = u.inputTokens !== undefined;
     const hasOutput = u.outputTokens !== undefined;
@@ -176,14 +177,74 @@ function accumulateOutcome(
     acc.generationTimeCoveredEvaluations += 1;
   }
   acc.usage = {
-    inputTokens: acc.usage.inputTokens + (u?.inputTokens ?? 0),
-    outputTokens: acc.usage.outputTokens + (u?.outputTokens ?? 0),
-    totalTokens: acc.usage.totalTokens + (u?.totalTokens ?? 0),
-    reasoningTokens: acc.usage.reasoningTokens + (u?.reasoningTokens ?? 0),
-    totalCost: acc.usage.totalCost + (u?.totalCost ?? 0),
-    generationTimeMs: acc.usage.generationTimeMs + (item.generationTimeMs ?? 0),
+    inputTokens: checkedCountAddition(
+      acc.usage.inputTokens,
+      u?.inputTokens ?? 0
+    ),
+    outputTokens: checkedCountAddition(
+      acc.usage.outputTokens,
+      u?.outputTokens ?? 0
+    ),
+    totalTokens: checkedCountAddition(
+      acc.usage.totalTokens,
+      u?.totalTokens ?? 0
+    ),
+    reasoningTokens: checkedCountAddition(
+      acc.usage.reasoningTokens,
+      u?.reasoningTokens ?? 0
+    ),
+    totalCost: checkedFiniteAddition(acc.usage.totalCost, u?.totalCost ?? 0),
+    generationTimeMs: checkedFiniteAddition(
+      acc.usage.generationTimeMs,
+      item.generationTimeMs ?? 0
+    ),
   };
   return acc;
+}
+
+function validateUsage(
+  usage: ModelUsage | undefined,
+  generationTimeMs: number | undefined
+): void {
+  if (usage !== undefined) {
+    validateOptionalCount(usage.inputTokens);
+    validateOptionalCount(usage.outputTokens);
+    validateOptionalCount(usage.totalTokens);
+    validateOptionalCount(usage.reasoningTokens);
+    validateOptionalFinite(usage.totalCost);
+    validateOptionalCount(usage.serverToolUse?.webSearchRequests);
+    validateOptionalCount(usage.serverToolUse?.toolCallsRequested);
+    validateOptionalCount(usage.serverToolUse?.toolCallsExecuted);
+  }
+  validateOptionalFinite(generationTimeMs);
+}
+
+function validateOptionalCount(value: number | undefined): void {
+  if (value !== undefined && (!Number.isSafeInteger(value) || value < 0)) {
+    throw new RangeError("Model usage count was invalid");
+  }
+}
+
+function validateOptionalFinite(value: number | undefined): void {
+  if (value !== undefined && (!Number.isFinite(value) || value < 0)) {
+    throw new RangeError("Model usage value was invalid");
+  }
+}
+
+function checkedCountAddition(left: number, right: number): number {
+  const result = left + right;
+  if (!Number.isSafeInteger(result)) {
+    throw new RangeError("Model usage count overflowed");
+  }
+  return result;
+}
+
+function checkedFiniteAddition(left: number, right: number): number {
+  const result = left + right;
+  if (!Number.isFinite(result)) {
+    throw new RangeError("Model usage value overflowed");
+  }
+  return result;
 }
 
 function finalizeRun(acc: FoldAccumulator): RunResult {

@@ -20,7 +20,7 @@ import {
 import { mcqScorer } from "../benchmarks/scorers/mcq/scorer";
 import { runHarnessPromise } from "../internal/effect-logger";
 import { recordGenerationId } from "../runtime/generation-ids";
-import type { ResponseItem, Sample } from "./core";
+import type { ModelUsage, ResponseItem, Sample } from "./core";
 import { MessageRole, ModelError, ScoreValue } from "./core";
 import { Dataset } from "./dataset";
 import type { ModelService } from "./model";
@@ -509,5 +509,72 @@ describe("runBenchmark", () => {
     );
     expect(result.usage.generationTimeMs).toBe(200);
     expect(result.usage.outputTokens).toBe(0);
+  });
+  it("rejects invalid usage fields and checked-addition overflow", async () => {
+    const runUsage = (usage: ModelUsage, generationTimeMs = 1) => {
+      const service: ModelService = {
+        generate: () =>
+          effectSucceed({
+            completion: "Answer: B",
+            message: { role: MessageRole.Assistant, content: "Answer: B" },
+            usage,
+            generationTimeMs,
+          }),
+      };
+      const model = { service, layer: layerSucceed(Model, Model.of(service)) };
+      return runPromise(
+        runBenchmark({ epochs: 1, maxConcurrency: 1 }).pipe(
+          provide(makeLayers(model, generate(service, { temperature: 0 })))
+        )
+      );
+    };
+
+    const invalid: readonly ModelUsage[] = [
+      { inputTokens: -1 },
+      { outputTokens: 1.5 },
+      { totalTokens: Number.NaN },
+      { reasoningTokens: Number.POSITIVE_INFINITY },
+      { totalCost: -1 },
+      { totalCost: Number.NaN },
+      { serverToolUse: { webSearchRequests: -1 } },
+      { serverToolUse: { toolCallsRequested: 1.5 } },
+      { serverToolUse: { toolCallsExecuted: Number.POSITIVE_INFINITY } },
+    ];
+    for (const usage of invalid) {
+      await expect(runUsage(usage)).rejects.toThrow();
+    }
+    await expect(runUsage({ inputTokens: 1 }, -1)).rejects.toThrow();
+    await expect(runUsage({ inputTokens: 1 }, Number.NaN)).rejects.toThrow();
+    await expect(
+      runUsage({ inputTokens: Number.MAX_SAFE_INTEGER })
+    ).rejects.toThrow();
+    await expect(runUsage({ totalCost: Number.MAX_VALUE })).rejects.toThrow();
+    await expect(runUsage({}, Number.MAX_VALUE)).rejects.toThrow();
+  });
+
+  it("allows fractional finite cost and generation duration", async () => {
+    const service: ModelService = {
+      generate: () =>
+        effectSucceed({
+          completion: "Answer: B",
+          message: { role: MessageRole.Assistant, content: "Answer: B" },
+          usage: {
+            inputTokens: 1,
+            outputTokens: 2,
+            totalTokens: 3,
+            reasoningTokens: 0,
+            totalCost: 0.0015,
+          },
+          generationTimeMs: 1.25,
+        }),
+    };
+    const model = { service, layer: layerSucceed(Model, Model.of(service)) };
+    const result = await runPromise(
+      runBenchmark({ epochs: 1, maxConcurrency: 1 }).pipe(
+        provide(makeLayers(model, generate(service, { temperature: 0 })))
+      )
+    );
+    expect(result.usage.totalCost).toBe(0.003);
+    expect(result.usage.generationTimeMs).toBe(2.5);
   });
 });
