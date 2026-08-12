@@ -1,0 +1,33 @@
+src/harness/run.test.ts
+  s_f8c2ecd3b504e8::t_3c4b86b1de3bce 23,513-579
+src/harness/run.ts
+  s_b6efddc9c89b47::t_658bbbf9c837db 158-159,180-200,205-249
+src/runner/run-definition.test.ts
+  s_f8c2ecd3b504e8::t_7377127934f8d0 6,21,30-35,228-357
+src/runner/run-definition.ts
+  s_f8c2ecd3b504e8::t_b5c631650b1df4 3,17-23,61-68,71,124-130,133-137,158-215
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2b292f619bcb4a878e649c878f04c0cfd4015baa",
+  "prompts": {},
+  "sessions": {
+    "s_b6efddc9c89b47": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_0098ebc7bffe63wmAs7rla02Js",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Kevin Flansburg <kflansburg@cloudflare.com>"
+    },
+    "s_f8c2ecd3b504e8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_00bfae41affeFgGTxvBCTvn4TR",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Kevin Flansburg <kflansburg@cloudflare.com>"
+    }
+  }
+}
