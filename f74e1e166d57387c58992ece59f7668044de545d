@@ -1,0 +1,19 @@
+src/runner/run-definition.test.ts
+  s_c2aaea9b7c4a14::t_74232a668630cd 1-133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f74e1e166d57387c58992ece59f7668044de545d",
+  "prompts": {},
+  "sessions": {
+    "s_c2aaea9b7c4a14": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_00dd6c1b3ffeMd99m2y6pHco95",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Kevin Flansburg <kflansburg@cloudflare.com>"
+    }
+  }
+}

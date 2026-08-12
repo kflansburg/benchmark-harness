@@ -1,0 +1,37 @@
+src/benchmarks/benchmark-config.ts
+  s_c2aaea9b7c4a14::t_4c035e66d94fc9 24-29,350-351
+src/benchmarks/deep-swe/benchmark.ts
+  s_c2aaea9b7c4a14::t_994a8de84fb3d1 48-58
+src/benchmarks/define-chat-benchmark.ts
+  s_60613d974684d9::t_3db8bfe8d33c03 66
+src/benchmarks/types.ts
+  s_c2aaea9b7c4a14::t_9a04f894efd3d8 11,13-15,18,37,41
+src/runner/run-definition.test.ts
+  s_60613d974684d9::t_f1170df00bad49 4-11,22-25,62-128,174,204-224,241,292,294
+src/runner/run-definition.ts
+  s_c2aaea9b7c4a14::t_b2ad09256845c5 11-14,32,35-37,39,41-42,51,54-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4877af5fdbc80f438881c6392f16a78c9c1553cb",
+  "prompts": {},
+  "sessions": {
+    "s_60613d974684d9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_00dddb54affe43rqt4ZuGlWulb",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Kevin Flansburg <kflansburg@cloudflare.com>"
+    },
+    "s_c2aaea9b7c4a14": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_00dd6c1b3ffeMd99m2y6pHco95",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Kevin Flansburg <kflansburg@cloudflare.com>"
+    }
+  }
+}
