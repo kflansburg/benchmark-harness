@@ -68,6 +68,7 @@ export interface RunResult {
 export interface UsageCoverage {
   readonly inputTokens: number;
   readonly outputTokens: number;
+  readonly inputOutputTokens: number;
   readonly reasoningTokens: number;
 }
 
@@ -156,12 +157,16 @@ function accumulateOutcome(
   acc.scores.push(item.sampleScore);
   const u = item.usage;
   if (u !== undefined) {
-    acc.usageCoveredEvaluations += 1;
+    const hasInput = u.inputTokens !== undefined;
+    const hasOutput = u.outputTokens !== undefined;
+    if (hasInput && hasOutput) {
+      acc.usageCoveredEvaluations += 1;
+    }
     acc.usageCoverage = {
-      inputTokens:
-        acc.usageCoverage.inputTokens + (u.inputTokens === undefined ? 0 : 1),
-      outputTokens:
-        acc.usageCoverage.outputTokens + (u.outputTokens === undefined ? 0 : 1),
+      inputTokens: acc.usageCoverage.inputTokens + (hasInput ? 1 : 0),
+      outputTokens: acc.usageCoverage.outputTokens + (hasOutput ? 1 : 0),
+      inputOutputTokens:
+        acc.usageCoverage.inputOutputTokens + (hasInput && hasOutput ? 1 : 0),
       reasoningTokens:
         acc.usageCoverage.reasoningTokens +
         (u.reasoningTokens === undefined ? 0 : 1),
@@ -345,7 +350,12 @@ export function runBenchmark(
         scores: [],
         usage: { ...ZERO_USAGE },
         usageCoveredEvaluations: 0,
-        usageCoverage: { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 },
+        usageCoverage: {
+          inputTokens: 0,
+          outputTokens: 0,
+          inputOutputTokens: 0,
+          reasoningTokens: 0,
+        },
         generationTimeCoveredEvaluations: 0,
       };
       return sampleEpochs.pipe(

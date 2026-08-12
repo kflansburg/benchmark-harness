@@ -175,9 +175,56 @@ describe("runBenchmark", () => {
     expect(result.usageCoverage).toEqual({
       inputTokens: 6,
       outputTokens: 6,
+      inputOutputTokens: 6,
       reasoningTokens: 0,
     });
     expect(result.sampleScores[0]?.generationIds).toEqual(["fake-Q1 target B"]);
+  });
+  it("tracks exact token-field coverage and the input-output intersection", async () => {
+    const model: ModelService = {
+      generate: (messages) => {
+        const input =
+          messages.find((m) => m.role === MessageRole.User)?.content ?? "";
+        const first = input.includes("Q1");
+        return effectSucceed({
+          completion: "Answer: B",
+          message: { role: MessageRole.Assistant, content: "Answer: B" },
+          usage: first
+            ? { inputTokens: 10, reasoningTokens: 3 }
+            : { outputTokens: 5, reasoningTokens: 4 },
+          ...(first && { generationTimeMs: 100 }),
+        });
+      },
+    };
+    const solver = chain(
+      systemMessage("You are a helpful assistant."),
+      generate(model, { temperature: 0.5 })
+    );
+    const result = await runPromise(
+      runBenchmark({ epochs: 1, maxConcurrency: 1 }).pipe(
+        provide(
+          makeLayers(
+            { service: model, layer: layerSucceed(Model, Model.of(model)) },
+            solver
+          )
+        )
+      )
+    );
+
+    expect(result.usage).toMatchObject({
+      inputTokens: 10,
+      outputTokens: 5,
+      reasoningTokens: 7,
+      generationTimeMs: 100,
+    });
+    expect(result.usageCoveredEvaluations).toBe(0);
+    expect(result.usageCoverage).toEqual({
+      inputTokens: 1,
+      outputTokens: 1,
+      inputOutputTokens: 0,
+      reasoningTokens: 2,
+    });
+    expect(result.generationTimeCoveredEvaluations).toBe(1);
   });
   it("captures per-sample message trajectories", async () => {
     const model = fakeModel(() => "Answer: B");
